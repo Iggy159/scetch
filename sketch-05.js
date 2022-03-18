@@ -17,6 +17,7 @@ const params = {
   amp: 0.2,
   frame: 0,
   animate: true,
+  lineCap: 'butt',
 }
 
 const sketch = () => {
@@ -61,6 +62,7 @@ const sketch = () => {
       context.rotate(angle)
 
       context.lineWidth = scale
+      context.lineCap = params.lineCap
 
       context.beginPath()
       context.moveTo(w * -0.5, 0)
@@ -76,6 +78,7 @@ const createPane = () => {
   const pane = new Tweakpane.Pane()
   let folder
   folder = pane.addFolder({ title: 'Grid '})
+  folder.addInput(params, 'lineCap', {option: {butt: 'butt', round: 'round', square: 'square'}})
   folder.addInput(params, 'cols', {min: 2, max: 50, step: 1})
   folder.addInput(params, 'rows', {min: 2, max: 50, step: 1})
   folder.addInput(params, 'scaleMin', {min: 1, max: 100})
