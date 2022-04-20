@@ -13,7 +13,7 @@ const glslify = require('glslify')
 
 
 const settings = {
-  dimensions: [512, 512],
+  //dimensions: [512, 512],
   //fps: 15,
   //duration: 4,
   // Make the loop animated
@@ -29,7 +29,7 @@ const sketch = ({ context }) => {
   });
 
   // WebGL background color
-  renderer.setClearColor("white", 1);
+  renderer.setClearColor("black", 1);
 
   // Setup a camera
   const camera = new THREE.OrthographicCamera();
@@ -39,35 +39,39 @@ const sketch = ({ context }) => {
   const scene = new THREE.Scene();
 
   // Setup a geometry
-  const geometry = new THREE.SphereGeometry(1, 32, 32);
+  const geometry = new THREE.SphereBufferGeometry(1, 64, 64);
 
   const palette = random.pick(palettes)
 
   const fragmentShader = glslify(`
     varying vec2 vUv;
-
+    varying vec3 vPosition;
     #pragma glslify: noise = require('glsl-noise/simplex/3d');
 
     uniform vec3 color;
     uniform float time;
-
+    
     void main () {
-      float offset = 0.3 * noise(vec3(vUv.xy * 2.0, time));
-      gl_FragColor = vec4(vec3(color + vUv.x + offset), 1.0);
+     
+      float offset = 0.2 * noise(vec3(vUv.xy * 2.0, time));
+      //gl_FragColor = vec4(vec3(color * vUv.x + offset), 1.0);
+      gl_FragColor = vec4(vec3(vPosition + offset * 5. * color), 1.0);
     }
   `);
   const vertexShader = glslify(`
     varying vec2 vUv;
     uniform float time;
+    varying vec3 vPosition;
 
     #pragma glslify: noise = require('glsl-noise/simplex/4d');
-
+    
     void main () {
       vUv = uv;
       vec3 pos = position.xyz;
-      
+      vPosition = position;
+
       pos += 0.1 * normal * noise(vec4(pos.xyz * 2.0, time / 2.0));
-      pos += 0.4 * normal * noise(vec4(pos.xyz * 3.0, time / 2.0));
+      pos += .2 * normal * noise(vec4(pos.xyz * 2.0, time / 2.0));
 
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
@@ -75,41 +79,27 @@ const sketch = ({ context }) => {
     
   const meshes = []
 
-  for(let i = 0; i < 1; i ++) {
-    const mesh = new THREE.Mesh(
-      geometry,
-      new THREE.ShaderMaterial({
-        fragmentShader,
-        vertexShader,
-        uniforms: {
-          color: { value: new THREE.Color(random.pick(palette))},
-          time: { value: 0}
-        },
-      })
-      );
-    
-    // mesh.position.set(
-    //   random.range(-1, 1),
-    //   random.range(-1, 1),
-    //   random.range(-1, 1),
-    // )
-    // mesh.scale.set(
-    //   random.range(-1, 1),
-    //   random.range(-1, 1),
-    //   random.range(-1, 1),
-    // )
-    // mesh.scale.multiplyScalar(0.5)
-    scene.add(mesh);
-    meshes.push(mesh)
-  }
+  const mesh = new THREE.Mesh(
+    geometry,
+    new THREE.ShaderMaterial({
+      fragmentShader,
+      vertexShader,
+      uniforms: {
+        color: { value: new THREE.Color('red')},
+        time: { value: 0}
+      },
+    })
+    );
+  scene.add(mesh);
+  meshes.push(mesh)
 
-  scene.add(new THREE.AmbientLight('hsl(0, 0%, 60%)'))
+  scene.add(new THREE.AmbientLight('hsl(50, 80%, 100%)'))
   
   const light = new THREE.DirectionalLight('white', 0.3)
-  light.position.set(2, 2, 4)
+  light.position.set(20, 8, 0.3)
   scene.add(light)
 
-  const easeFn = BezierEasing(0.67, 0.03, 0.29, 0.9)
+  //const easeFn = BezierEasing(0.67, 0.03, 0.29, 0.9)
 
   // draw each frame
   return {
@@ -134,7 +124,7 @@ const sketch = ({ context }) => {
       camera.far = 100;
 
       // Set position & look at world center
-      camera.position.set(zoom, zoom, zoom);
+      camera.position.set(1, 1, 1);
       camera.lookAt(new THREE.Vector3());
 
       // Update the camera
@@ -143,7 +133,7 @@ const sketch = ({ context }) => {
     // Update & render your scene here
     render({ playhead, time }) {
       const t = Math.sin(playhead * Math.PI)
-      scene.rotation.y = easeFn(t)
+      scene.rotation.y = time
 
       meshes.forEach(mesh => {
         mesh.material.uniforms.time.value = time
